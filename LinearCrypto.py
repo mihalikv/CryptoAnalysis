@@ -8,11 +8,11 @@ from Magic import CryptoMagic
 
 
 class LinearCrypto(object):
-    def __init__(self, magic, inputs, outputs) -> None:
+    def __init__(self, magic, inputs: list, outputs: list, alternative_inputs: list, alternative_outputs: list) -> None:
         super().__init__()
         self.magic = magic
-        self.inputs = inputs
-        self.outputs = outputs
+        self.inputs = [inputs, alternative_inputs]
+        self.outputs = [outputs, alternative_outputs]
 
     def generate_table(self):
         header = [" "]
@@ -38,26 +38,65 @@ class LinearCrypto(object):
             t.add_row(out)
         print(t)
 
-    def get_first_stat(self):
-        filename = '{}.csv'.format(time.strftime("%Y%m%d-%H%M%S"))
+    def get_stat(self):
+        filename0 = '{}_0.csv'.format(time.strftime("%Y%m%d-%H%M%S"))
+        filename1 = '{}_1.csv'.format(time.strftime("%Y%m%d-%H%M%S"))
+        files = [open(filename0, 'a'), open(filename1, 'a')]
         start, stop = 1000, 10000
-        step = int(stop/start)
-        with open(filename, 'a') as f:
-            for j in range(step):
-                total_equals = 0
-                total = start*(j+1)
-                for i in range(total):
-                    random_input = random.SystemRandom().randint(0, 65535)
-                    encrypted = self.magic.encrypt(BitArray(length=16, uint=random_input))
-                    result = False
-                    for input in self.inputs:
-                        result ^= encrypted[input-1]
-                    for output in self.outputs:
-                        result ^= encrypted[output-1]
+        step = int(stop / start)
+        for j in range(step):
+            total_equals = [0, 0]
+            total = start * (j + 1)
+            for i in range(total):
+                random_input = random.SystemRandom().randint(0, 65535)
+                random_input_bits = BitArray(length=16, uint=random_input)
+                encrypted = self.magic.encrypt(random_input_bits)
+                result = False
+                for stat_index in range(2):
+                    for input in self.inputs[stat_index]:
+                        result ^= random_input_bits[input - 1]
+                    for output in self.outputs[stat_index]:
+                        result ^= encrypted[output - 1]
                     if not result:
-                        total_equals += 1
-                f.write("{}, {}\n".format(float(total_equals/total), total))
-            f.close()
+                        total_equals[stat_index] += 1
+            for stat_index in range(2):
+                files[stat_index].write("{}, {}\n".format(float(total_equals[stat_index] / total), total))
+        map(lambda f: f.close(), files)
+
+
+class DifferentialCrypto(object):
+    def __init__(self, magic,
+                 delta_p: BitArray,
+                 delta_u: BitArray,
+                 delta_p_alt: BitArray,
+                 delta_u_alt: BitArray) -> None:
+
+        super().__init__()
+        self.magic = magic
+        self.delta_p = [delta_p, delta_p_alt]
+        self.delta_u = [delta_u, delta_u_alt]
+
+    def get_stat(self):
+        filename0 = '{}_0.csv'.format(time.strftime("%Y%m%d-%H%M%S"))
+        filename1 = '{}_1.csv'.format(time.strftime("%Y%m%d-%H%M%S"))
+        files = [open(filename0, 'a'), open(filename1, 'a')]
+        start, stop = 1000, 10000
+        step = int(stop / start)
+        for j in range(step):
+            total_equals = [0, 0]
+            total = start * (j + 1)
+            for i in range(total):
+                for stat_index in range(1):
+                    x = random.SystemRandom().randint(0, 65535)
+                    x_bits = BitArray(length=16, uint=x)
+                    y = self.magic.encrypt(x_bits)
+                    x_1 = BitArray(length=16, uint=(x ^ self.delta_p[stat_index].uint))
+                    y_1 = self.magic.encrypt(x_1)
+                    if y.uint ^ y_1.uint == self.delta_u[stat_index].uint:
+                        total_equals[stat_index] += 1
+            for stat_index in range(1):
+                files[stat_index].write("{}, {}\n".format(float(total_equals[stat_index] / total), total))
+        map(lambda f: f.close(), files)
 
 
 def main():
@@ -67,9 +106,19 @@ def main():
     key = BitArray(length=80, uint=0)
     crypto_magic = CryptoMagic(key, sbox, permutation)
 
-    linear_crypto = LinearCrypto(crypto_magic, [5, 7, 8], [6, 8, 14, 16])
-    linear_crypto.generate_table()
-    linear_crypto.get_first_stat()
+    # linear_crypto = LinearCrypto(crypto_magic, [5, 7, 8], [6, 8, 14, 16], [6, 7, 8], [6, 8, 13, 16])
+    # linear_crypto.generate_table()
+    # linear_crypto.get_stat()
+
+    differential_crypto = DifferentialCrypto(
+        crypto_magic,
+        BitArray('0b0000101100000000'),
+        BitArray('0b0000011000000110'),
+        BitArray('0b0000010000000000'),
+        BitArray('0b0000100100000000'),
+    )
+    differential_crypto.get_stat()
+
 
 if __name__ == "__main__":
     main()

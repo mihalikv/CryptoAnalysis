@@ -9,7 +9,7 @@ class CryptoMagic(object):
         for i in range(5):
             self.keys.append(key[(i * 16):((i + 1) * 16)])
 
-    def encrypt(self, plain_text):
+    def encrypt(self, plain_text) -> BitArray:
         self.state = plain_text
         for i in range(3):
             self.state ^= self.keys[i]
