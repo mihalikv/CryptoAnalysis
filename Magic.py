@@ -9,15 +9,16 @@ class CryptoMagic(object):
         for i in range(5):
             self.keys.append(key[(i * 16):((i + 1) * 16)])
 
-    def encrypt(self, plain_text) -> BitArray:
+    def encrypt(self, plain_text, rounds=4) -> BitArray:
         self.state = plain_text
         for i in range(3):
             self.state ^= self.keys[i]
             self.state = CryptoMagic.run_substitution(self.state, self.sbox)
             self.state = self.run_permutation(self.state, self.permutation)
         self.state ^= self.keys[3]
-        self.state = CryptoMagic.run_substitution(self.state, self.sbox)
-        self.state ^= self.keys[4]
+        if rounds == 4:
+            self.state = CryptoMagic.run_substitution(self.state, self.sbox)
+            self.state ^= self.keys[4]
         return self.state
 
     @staticmethod
