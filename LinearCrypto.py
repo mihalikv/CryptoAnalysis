@@ -24,7 +24,7 @@ class LinearCrypto(object):
                 positive = 0
                 for i in range(16):
                     input_four_bits = BitArray(length=4, uint=i)
-                    result_four_bits = CryptoMagic.one_substitution(input_four_bits.int, self.magic.sbox)
+                    result_four_bits = CryptoMagic.one_substitution(input_four_bits.uint, self.magic.sbox)
                     sum = False
                     for index, bit in enumerate(BitArray(length=4, uint=input)):
                         if bit:
@@ -106,15 +106,15 @@ class DifferentialCrypto(object):
 
 
 def main():
-    plain_text = BitArray('0b0000000011111111')
+    plain_text = BitArray('0b0000101100000000')
     sbox = [14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7]
     permutation = [0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15]
     key = BitArray(length=80, uint=0)
     crypto_magic = CryptoMagic(key, sbox, permutation)
-
-    linear_crypto = LinearCrypto(crypto_magic, [5, 7, 8], [6, 8, 14, 16], [6, 7, 8], [6, 8, 13, 16])
-    linear_crypto.generate_table()
-    linear_crypto.get_stat()
+    # print(crypto_magic.encrypt(plain_text, 4).bin)
+    # linear_crypto = LinearCrypto(crypto_magic, [5, 7, 8], [6, 8, 14, 16], [6, 7, 8], [6, 8, 13, 16])
+    # linear_crypto.generate_table()
+    # linear_crypto.get_stat()
 
     differential_crypto = DifferentialCrypto(
         crypto_magic,

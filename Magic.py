@@ -23,7 +23,7 @@ class CryptoMagic(object):
 
     @staticmethod
     def run_permutation(state, permutation):
-        result = state
+        result = state.copy()
         for index, bit in enumerate(state):
             result[permutation[index]] = bit
         return result
@@ -31,7 +31,7 @@ class CryptoMagic(object):
     @staticmethod
     def run_substitution(state, sbox):
         for j in range(4):
-            decimal = state[(j * 4):((j + 1) * 4)].int
+            decimal = state[(j * 4):((j + 1) * 4)].uint
             substitution = CryptoMagic.one_substitution(decimal, sbox)
             state.overwrite(substitution, j * 4)
         return state
