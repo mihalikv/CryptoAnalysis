@@ -11,14 +11,13 @@ class CryptoMagic(object):
 
     def encrypt(self, plain_text, rounds=4) -> BitArray:
         self.state = plain_text
-        for i in range(3):
+        for i in range(rounds-1):
             self.state ^= self.keys[i]
             self.state = CryptoMagic.run_substitution(self.state, self.sbox)
             self.state = self.run_permutation(self.state, self.permutation)
         self.state ^= self.keys[3]
-        if rounds == 4:
-            self.state = CryptoMagic.run_substitution(self.state, self.sbox)
-            self.state ^= self.keys[4]
+        self.state = CryptoMagic.run_substitution(self.state, self.sbox)
+        self.state ^= self.keys[4]
         return self.state
 
     @staticmethod
